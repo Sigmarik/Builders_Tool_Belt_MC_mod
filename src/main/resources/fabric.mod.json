@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "builderstoolbelt",
+  "version": "${version}",
+
+  "name": "Builder's tool belt",
+  "description": "Adds a bunch of useful client-side features for building in creative with cheats.",
+  "authors": [
+    "Sigmarionid"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+
+  "license": "MIT",
+  "icon": "assets/builderstoolbelt/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.fabricmc.tbmod.ToolBeltMod"
+    ]
+  },
+  "mixins": [
+    "builderstoolbelt.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.14.6",
+    "fabric": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
