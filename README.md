@@ -2,7 +2,7 @@
 
 ## Setup
 
-Just like a Fabric template mod.
+Just like the Fabric template mod.
 
 ## License
 
