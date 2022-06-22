@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "builderstoolbelt:item/blue_pick"
+  }
+}

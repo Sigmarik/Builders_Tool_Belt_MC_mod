@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "builderstoolbelt:item/semi_orange_chip"
+  }
+}

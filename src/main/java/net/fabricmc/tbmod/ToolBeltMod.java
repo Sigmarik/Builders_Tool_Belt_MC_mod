@@ -3,6 +3,7 @@ package net.fabricmc.tbmod;
 import com.mojang.serialization.Lifecycle;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.fabricmc.tbmod.items.ModItems;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Items;
@@ -28,5 +29,6 @@ public class ToolBeltMod implements ModInitializer {
 		// Proceed with mild caution.
 
 		LOGGER.info("Initializing tool belt mod!");
+		ModItems.registerModItems();
 	}
 }

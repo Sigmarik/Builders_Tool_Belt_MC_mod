@@ -13,7 +13,6 @@ import net.minecraft.tag.BlockTags;
 import net.minecraft.text.Text;
 import net.minecraft.util.*;
 import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -23,11 +22,10 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static java.lang.Math.abs;
 import static net.minecraft.util.math.MathHelper.ceil;
 import static net.minecraft.util.math.MathHelper.floor;
 
@@ -66,7 +64,9 @@ public class BuilderTool extends MiningToolItem {
     private BlockState toolMaterial = Blocks.STONE.getDefaultState();
     private boolean toolMatchState = false;
 
-    protected BuilderTool(ToolMaterial material, int attackDamage, float attackSpeed, Settings settings) {
+    private HashSet<BlockPos> visitedBlocks = new HashSet<>();
+
+    protected BuilderTool(ToolMaterial material, int attackDamage, float attackSpeed, Settings settings, Set<BlockPos> visitedBlocks, HashSet<BlockPos> visitedBlocks1) {
         super((float)attackDamage, attackSpeed, material, BlockTags.PICKAXE_MINEABLE, settings);
     }
 
@@ -95,6 +95,22 @@ public class BuilderTool extends MiningToolItem {
         return false;
     }
 
+    private void dfs(World world, BlockPos position, BlockPos clickPos) {
+        double delta = Math.min(toolSize, CUBIC_SIZE_LIMIT);
+        BlockState clickBlock = world.getBlockState(clickPos);
+        if (visitedBlocks.contains(position)) return;
+        if (toolMasking && !checkMask(world.getBlockState(position), clickBlock, toolMaterial)) return;
+        if (toolMode.equals(PAINT_MODE) && world.getBlockState(position).getBlock().equals(Blocks.AIR)) return;
+        if (position.getSquaredDistance(clickPos) > (delta * delta * 3.0 / 4.0)) return;
+        this.visitedBlocks.add(position);
+        BlockPos[] available = {position.up(), position.down(),
+                position.south(), position.north(),
+                position.east(), position.west()};
+        for (BlockPos newPos : available) {
+            dfs(world, newPos, clickPos);
+        }
+    }
+
     private ArrayList<BlockPos> applyCubic(World world, BlockPos origin) {
         BlockState clickBlock = world.getBlockState(origin);
         ArrayList<BlockPos> answer = new ArrayList<>();
@@ -104,6 +120,9 @@ public class BuilderTool extends MiningToolItem {
             subtraction = floor(Math.min(toolSize, CUBIC_SIZE_LIMIT) / 2);
             addition = floor(Math.min(toolSize, CUBIC_SIZE_LIMIT)) - subtraction;
         }
+        this.visitedBlocks.clear();
+        //this.visitedBlocks.add(origin);
+        dfs(world, origin, origin);
         for (int dx = origin.getX() - subtraction; dx <= origin.getX() + addition; dx++) {
             for (int dy = origin.getY() - subtraction; dy <= origin.getY() + addition; dy++) {
                 for (int dz = origin.getZ() - subtraction; dz <= origin.getZ() + addition; dz++) {
@@ -112,9 +131,9 @@ public class BuilderTool extends MiningToolItem {
                                     (dy - origin.getY()) * (dy - origin.getY()) +
                                     (dz - origin.getZ()) * (dz - origin.getZ()));
                     if (toolShape.equals(CUBIC_SHAPE)) {
-                        distance = Math.max(Math.abs(dx - origin.getX()),
-                                Math.max(Math.abs(dy - origin.getY()),
-                                        Math.abs(dz - origin.getZ())));
+                        distance = Math.max(abs(dx - origin.getX()),
+                                Math.max(abs(dy - origin.getY()),
+                                        abs(dz - origin.getZ())));
                     }
                     int percentage = ceil((1.0 - distance / (toolSize / 2.0)) * toolOpacity);
                     if (!toolGradient) {percentage=toolOpacity;}
@@ -124,6 +143,7 @@ public class BuilderTool extends MiningToolItem {
                             clickBlock, toolMaterial)) {continue;}
                     int rand = ThreadLocalRandom.current().nextInt(0, 100);
                     if (rand >= percentage) {continue;}
+                    if (toolVolumeCheck && !visitedBlocks.contains(new BlockPos(dx, dy, dz))) continue;
                     answer.add(new BlockPos(dx, dy, dz));
                 }
             }
@@ -139,7 +159,7 @@ public class BuilderTool extends MiningToolItem {
         double z = origin.getZ();
         int sgn = (int) Math.signum(toolSize);
         for (int iteration = 0;
-             iteration < ceil(Math.min(Math.abs(toolSize), LINEAR_SIZE_LIMIT));
+             iteration < ceil(Math.min(abs(toolSize), LINEAR_SIZE_LIMIT));
              iteration++,
                      x += vector.getX() * sgn,
                      y += vector.getY() * sgn,
@@ -213,9 +233,9 @@ public class BuilderTool extends MiningToolItem {
         if (name.endsWith("/")) {return;}
         String[] commands = name.split("/")[1].split(";");
         for (String command : commands) {
-            if (!command.contains("=")) {continue;}
             command = command.replaceAll(" ", "");
             String argument = command.split("=")[0];
+            if (command.split("=").length < 2) {continue;}
             String value = command.split("=")[1];
             if (Objects.equals(argument, MATERIAL_PARAMETER)) {
                 if (value.contains(":")) {
@@ -225,14 +245,32 @@ public class BuilderTool extends MiningToolItem {
                     this.toolMaterial = Registry.BLOCK.get(new Identifier("minecraft", value)).getDefaultState();
                 }
             }
-            if (Objects.equals(argument, MODE_PARAMETER)) {this.toolMode = value;}
-            if (Objects.equals(argument, SHAPE_PARAMETER)) {this.toolShape = value;}
-            if (Objects.equals(argument, SIZE_PARAMETER)) {this.toolSize = Double.parseDouble(value);}
-            if (Objects.equals(argument, OPACITY_PARAMETER)) {this.toolOpacity = Integer.parseInt(value);}
-            if (Objects.equals(argument, MASKING_PARAMETER)) {this.toolMasking = Boolean.parseBoolean(value);}
-            if (Objects.equals(argument, CHECK_VOLUMES_PARAMETER)) {this.toolVolumeCheck = Boolean.parseBoolean(value);}
-            if (Objects.equals(argument, GRADIENT_PARAMETER)) {this.toolGradient = Boolean.parseBoolean(value);}
-            if (Objects.equals(argument, STATE_MATCH_PARAMETER)) {this.toolMatchState = Boolean.parseBoolean(value);}
+            try {
+                if (Objects.equals(argument, MODE_PARAMETER)) {
+                    this.toolMode = value;
+                }
+                if (Objects.equals(argument, SHAPE_PARAMETER)) {
+                    this.toolShape = value;
+                }
+                if (Objects.equals(argument, SIZE_PARAMETER)) {
+                    this.toolSize = Double.parseDouble(value);
+                }
+                if (Objects.equals(argument, OPACITY_PARAMETER)) {
+                    this.toolOpacity = Integer.parseInt(value);
+                }
+                if (Objects.equals(argument, MASKING_PARAMETER)) {
+                    this.toolMasking = Boolean.parseBoolean(value);
+                }
+                if (Objects.equals(argument, CHECK_VOLUMES_PARAMETER)) {
+                    this.toolVolumeCheck = Boolean.parseBoolean(value);
+                }
+                if (Objects.equals(argument, GRADIENT_PARAMETER)) {
+                    this.toolGradient = Boolean.parseBoolean(value);
+                }
+                if (Objects.equals(argument, STATE_MATCH_PARAMETER)) {
+                    this.toolMatchState = Boolean.parseBoolean(value);
+                }
+            } catch (Exception exception) {}
         }
     }
 
@@ -265,6 +303,8 @@ public class BuilderTool extends MiningToolItem {
                     if (Objects.equals(toolMode, ERASE_MODE)) {
                         state = Blocks.AIR.getDefaultState();
                     } else {
+                        if (toolMode.equals(PAINT_MODE) &&
+                                context.getWorld().getBlockState(bPos).getBlock().equals(Blocks.AIR)) continue;
                         state = toolMaterial;
                     }
                     context.getWorld().setBlockState(bPos, state);

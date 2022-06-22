@@ -1,0 +1,21 @@
+{
+  "item.builderstoolbelt.blue_chip": "Zone Chip",
+  "item.builderstoolbelt.cyan_chip": "Zone Chip",
+  "item.builderstoolbelt.deep_blue_chip": "Zone Chip",
+  "item.builderstoolbelt.lime_chip": "Zone Chip",
+  "item.builderstoolbelt.pink_chip": "Zone Chip",
+  "item.builderstoolbelt.semi_orange_chip": "Zone Chip",
+  "item.builderstoolbelt.yellow_chip": "Zone Chip",
+
+  "item.builderstoolbelt.blue_pick": "Dev Pickaxe",
+  "item.builderstoolbelt.cyan_pick": "Dev Pickaxe",
+  "item.builderstoolbelt.deep_blue_pick": "Dev Pickaxe",
+  "item.builderstoolbelt.lime_pick": "Dev Pickaxe",
+  "item.builderstoolbelt.pink_pick": "Dev Pickaxe",
+  "item.builderstoolbelt.semi_orange_pick": "Dev Pickaxe",
+  "item.builderstoolbelt.yellow_pick": "Dev Pickaxe",
+
+  "item.builderstoolbelt.paste_tool": "Paste Tool",
+
+  "itemGroup.builderstoolbelt.tools_group": "Dev Tools"
+}
